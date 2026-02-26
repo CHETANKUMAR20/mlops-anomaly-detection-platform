@@ -3,4 +3,6 @@ pandas
 numpy
 fastapi
 uvicorn	
-
+joblib
+prometheus-client
+requests

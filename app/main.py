@@ -1,36 +1,34 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-import pandas as pd
-from anomaly_model import detect_anomalies
+from fastapi.responses import Response
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
-app = FastAPI(title="AI Log Anomaly Detection API")
+from app.schemas.log_schema import LogInput
+from app.models.predictor import predict
+from app.core.config import settings
 
-class LogInput(BaseModel):
-    cpu: int
-    memory: int
-    response_time: int
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.VERSION
+)
 
-@app.get("/")
-def root():
-    return {"message": "AI Log Anomaly Detection Service Running"}
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
+@app.get("/ready")
+def readiness():
+    return {"status": "ready"}
 
 @app.post("/predict")
-def predict(log: LogInput):
-    df = pd.DataFrame([[log.cpu, log.memory, log.response_time]],
-                      columns=["cpu", "memory", "response_time"])
-
-    result = detect_anomalies(df)
-
-    prediction = int(result["anomaly"].iloc[0])
-
-    if prediction == -1:
-        status = "ANOMALY DETECTED"
-    else:
-        status = "Normal"
-
+def detect(log: LogInput):
+    result = predict(log.cpu, log.memory, log.response_time)
     return {
         "cpu": log.cpu,
         "memory": log.memory,
         "response_time": log.response_time,
-        "prediction": status
+        "prediction": result
     }
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

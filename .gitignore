@@ -1,3 +1,13 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+
+# Model artifacts
+app/models/model.joblib
+
+# Docker
+*.log
+
+# OS
+.DS_Store
